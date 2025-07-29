@@ -10,6 +10,7 @@ terraform {
 
 provider "azurerm" {
   features {}
+  subscription_id = "8a6fb3ee-9155-42ad-92e7-941efb409cf3"
 }
 
 resource "azurerm_resource_group" "rg" {
@@ -24,7 +25,6 @@ resource "azurerm_service_plan" "quiz_plan" {
   os_type             = "Linux"
   sku_name            = "F1"
 }
-
 
 resource "azurerm_app_service" "quiz_app" {
   name                = var.app_service_name
@@ -41,8 +41,21 @@ resource "azurerm_app_service" "quiz_app" {
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "true"
     "SCM_DO_BUILD_DURING_DEPLOYMENT"      = "true"
   }
-}
 
+  provisioner "local-exec" {
+    command = <<EOT
+      echo "Deploying ZIP to App Service..."
+      access_token=$(az account get-access-token --query accessToken -o tsv)
+      curl -X POST "https://${self.default_site_hostname}/api/zipdeploy" \
+        -H "Authorization: Bearer $access_token" \
+        -H "Content-Type: application/zip" \
+        --data-binary "@app/app.zip"
+    EOT
+    interpreter = ["bash", "-c"]
+  }
+
+  depends_on = [azurerm_service_plan.quiz_plan]
+}
 
 resource "azurerm_storage_account" "storage" {
   name                     = var.storage_account_name
