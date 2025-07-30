@@ -1,6 +1,6 @@
 resource_group_name     = "quiz-rg"
 location                = "eastus"
 app_service_plan_name   = "quiz-service-plan"
-app_service_name        = "quizapp"      
-storage_account_name    = "quizriskanlyticsstorage"     
+app_service_name        = "quizriskapp"      
+storage_account_name    = "quizriskstorage"     
 app_insights_name       = "quiz-app-insights"
