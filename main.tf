@@ -1,73 +1,41 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4.0"
-    }
-  }
-  required_version = ">= 1.3.0"
-}
-
 provider "azurerm" {
   features {}
-  subscription_id = "f99f998b-61e8-4e12-a066-703892cfa30d"
+  subscription_id = var.subscription_id
 }
+
 
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = var.location
 }
 
-resource "azurerm_service_plan" "quiz_plan" {
-  name                = var.app_service_plan_name
+resource "azurerm_service_plan" "plan" {
+  name                = "quiz-app-plan"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  os_type             = "Linux"
-  sku_name            = "F1"
+
+  sku_name = "B1"         # Example SKU name
+  os_type  = "Windows"    # or "Linux"
+
+  # Optional scaling properties:
+  # capacity = 1
+  # per_site_scaling = false
+  # maximum_elastic_worker_count = 1
 }
 
-resource "azurerm_app_service" "quiz_app" {
-  name                = var.app_service_name
+resource "azurerm_windows_web_app" "webapp" {
+  name                = "quiz-app-webapp"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  app_service_plan_id = azurerm_service_plan.quiz_plan.id
+  service_plan_id = azurerm_service_plan.plan.id
 
   site_config {
-    linux_fx_version = "PYTHON|3.11"
-    always_on        = true
+    default_documents = ["index.html"]
+    always_on         = false
   }
 
-  app_settings = {
-    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "true"
-    "SCM_DO_BUILD_DURING_DEPLOYMENT"      = "true"
-  }
-
-  provisioner "local-exec" {
-    command = <<EOT
-      echo "Deploying ZIP to App Service..."
-      access_token=$(az account get-access-token --query accessToken -o tsv)
-      curl -X POST "https://${self.default_site_hostname}/api/zipdeploy" \
-        -H "Authorization: Bearer $access_token" \
-        -H "Content-Type: application/zip" \
-        --data-binary "@app/app.zip"
-    EOT
-    interpreter = ["bash", "-c"]
-  }
-
-  depends_on = [azurerm_service_plan.quiz_plan]
+  https_only = true
+  zip_deploy_file = "site.zip" 
 }
 
-resource "azurerm_storage_account" "storage" {
-  name                     = var.storage_account_name
-  resource_group_name      = azurerm_resource_group.rg.name
-  location                 = azurerm_resource_group.rg.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-}
 
-resource "azurerm_application_insights" "insights" {
-  name                = var.app_insights_name
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  application_type    = "web"
-}

@@ -1,31 +1,4 @@
-# ---- Python / Flask ----
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-env/
-venv/
-*.env
-.env
-
-# ---- Flask config cache ----
-instance/
-*.sqlite3
-
-# ---- Terraform ----
+*.tfstate
+*.tfstate.*
 .terraform/
-terraform.tfstate
-terraform.tfstate.*
-crash.log
-*.tfvars.backup
-*.tfplan
-
-# ---- OS / Editor files ----
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-*.swp
-
-# ---- Zip deployments ----
-app.zip
+terraform.tfvars
